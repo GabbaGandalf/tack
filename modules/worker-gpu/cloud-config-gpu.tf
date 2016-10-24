@@ -67,7 +67,7 @@ write-files:
         LimitNPROC=1048576
         ExecStartPre=/sbin/modprobe ip_tables
         ExecStartPre=/bin/mkdir -p /run/flannel
-        ExecStartPre=/bin/mkdir -p ${ETCD_SSL_DIR}
+        ExecStartPre=/bin/mkdir -p /etc/ssl/etcd
 
         ExecStart=/usr/bin/rkt run --net=host \
            --stage1-path=/usr/lib/rkt/stage1-images/stage1-fly.aci \
@@ -76,17 +76,17 @@ write-files:
            --inherit-env=true \
            --volume runsystemd,kind=host,source=/run/systemd,readOnly=false \
            --volume runflannel,kind=host,source=/run/flannel,readOnly=false \
-           --volume ssl,kind=host,source=${ETCD_SSL_DIR},readOnly=true \
+           --volume ssl,kind=host,source=/etc/ssl/etcd,readOnly=true \
            --volume certs,kind=host,source=/usr/share/ca-certificates,readOnly=true \
            --volume resolv,kind=host,source=/etc/resolv.conf,readOnly=true \
            --volume hosts,kind=host,source=/etc/hosts,readOnly=true \
            --mount volume=runsystemd,target=/run/systemd \
            --mount volume=runflannel,target=/run/flannel \
-           --mount volume=ssl,target=${ETCD_SSL_DIR} \
+           --mount volume=ssl,target=/etc/ssl/etcd \
            --mount volume=certs,target=/etc/ssl/certs \
            --mount volume=resolv,target=/etc/resolv.conf \
            --mount volume=hosts,target=/etc/hosts \
-           ${FLANNEL_IMG}:${FLANNEL_VER} \
+           quay.io/coreos/flannel:v0.6.2 \
            --exec /opt/bin/flanneld \
            -- --ip-masq=true
 
@@ -96,7 +96,7 @@ write-files:
            --insecure-options=image \
            --volume runvol,kind=host,source=/run,readOnly=false \
            --mount volume=runvol,target=/run \
-           ${FLANNEL_IMG}:${FLANNEL_VER} \
+           quay.io/coreos/flannel:v0.6.2 \
            --exec /opt/bin/mk-docker-opts.sh -- -d /run/flannel_docker_opts.env -i
 
         ExecStopPost=/usr/bin/rkt gc --mark-only

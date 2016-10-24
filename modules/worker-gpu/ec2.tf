@@ -95,7 +95,7 @@ resource "aws_autoscaling_group" "worker-gpu" {
 
 resource "null_resource" "dummy_dependency" {
   depends_on = [
-    "aws_autoscaling_group.worker",
-    "aws_launch_configuration.worker",
+    "aws_autoscaling_group.worker-gpu",
+    "aws_launch_configuration.worker-gpu",
   ]
 }
