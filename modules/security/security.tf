@@ -108,7 +108,8 @@ resource "aws_security_group" "worker" {
     to_port = 0
     protocol = "-1"
     self = true
-    cidr_blocks = [ "${ var.cidr-vpc }" ]
+    /* cidr_blocks = [ "${ var.cidr-vpc }" ] */
+    cidr_blocks = [ "0.0.0.0/0" ]
   }
 
   name = "worker-k8s-${ var.name }"
