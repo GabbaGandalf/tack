@@ -6,7 +6,8 @@ resource "template_file" "cloud-config-gpu" {
 runcmd:
   - sudo mkdir -p /etc/systemd/system/flanneld.service.d
   - sudo mkdir -p /etc/systemd/system/docker.service.d
-  
+  - sudo mkdir -p /run/flannel
+
 write-files:
 
 	- path: /etc/systemd/system/format/ephemeral.service
@@ -16,8 +17,8 @@ write-files:
         After=dev-xvdf.device
         Requires=dev-xvdf.device
         [Service]
-        ExecStart=/usr/sbin/wipefs -f /dev/xvdf
-        ExecStart=/usr/sbin/mkfs.ext4 -F /dev/xvdf
+        ExecStart=/sbin/wipefs -f /dev/xvdf
+        ExecStart=/sbin/mkfs.ext4 -F /dev/xvdf
         RemainAfterExit=yes
         Type=oneshot
 
@@ -34,20 +35,75 @@ write-files:
         Where=/var/lib/docker
         Type=ext4
 
-	#TODO
-	- path: /etc/systemd/system/etcd2.service
+	- path: /etc/systemd/system/etcd2.service.d/50-etcd-network.conf
       content: |
-          asdf
-		  etcd2:
-			discovery-srv: ${ internal-tld }
-			peer-trusted-ca-file: /etc/kubernetes/ssl/ca.pem
-			peer-client-cert-auth: true
-			peer-cert-file: /etc/kubernetes/ssl/k8s-worker.pem
-			peer-key-file: /etc/kubernetes/ssl/k8s-worker-key.pem
-			proxy: on
+        [Service]
+        Environment="ETCD_DISCOVERY_SRV=${ internal-tld }"
+        Environment="ETCD_PEER_TRUSTED_CA_FILE=/etc/kubernetes/ssl/ca.pem"
+        Environment="ETCD_PEER_CLIENT_CERT_AUTH=true"
+        Environment="ETCD_PEER_CERT_FILE=/etc/kubernetes/ssl/k8s-worker.pem"
+        Environment="ETCD_PEER_KEY_FILE=/etc/kubernetes/ssl/k8s-worker-key.pem"
+			  Environment="ETC_PROXY=on"
 		
 
-	#TODO flannel service
+  - path: /etc/systemd/system/flanneld.service
+      content: |
+        [Unit]
+        Description=Network fabric for containers
+        Documentation=https://github.com/coreos/flannel
+        After=etcd.service etcd2.service
+        Before=docker.service
+
+        [Service]
+        Type=notify
+        Restart=always
+        RestartSec=5
+        Environment="TMPDIR=/var/tmp/"
+        Environment="FLANNEL_VER=v0.6.2"
+        Environment="FLANNEL_IMG=quay.io/coreos/flannel"
+        Environment="ETCD_SSL_DIR=/etc/ssl/etcd"
+        EnvironmentFile=-/run/flannel/options.env
+        LimitNOFILE=40000
+        LimitNPROC=1048576
+        ExecStartPre=/sbin/modprobe ip_tables
+        ExecStartPre=/bin/mkdir -p /run/flannel
+        ExecStartPre=/bin/mkdir -p ${ETCD_SSL_DIR}
+
+        ExecStart=/usr/bin/rkt run --net=host \
+           --stage1-path=/usr/lib/rkt/stage1-images/stage1-fly.aci \
+           --insecure-options=image \
+           --set-env=NOTIFY_SOCKET=/run/systemd/notify \
+           --inherit-env=true \
+           --volume runsystemd,kind=host,source=/run/systemd,readOnly=false \
+           --volume runflannel,kind=host,source=/run/flannel,readOnly=false \
+           --volume ssl,kind=host,source=${ETCD_SSL_DIR},readOnly=true \
+           --volume certs,kind=host,source=/usr/share/ca-certificates,readOnly=true \
+           --volume resolv,kind=host,source=/etc/resolv.conf,readOnly=true \
+           --volume hosts,kind=host,source=/etc/hosts,readOnly=true \
+           --mount volume=runsystemd,target=/run/systemd \
+           --mount volume=runflannel,target=/run/flannel \
+           --mount volume=ssl,target=${ETCD_SSL_DIR} \
+           --mount volume=certs,target=/etc/ssl/certs \
+           --mount volume=resolv,target=/etc/resolv.conf \
+           --mount volume=hosts,target=/etc/hosts \
+           ${FLANNEL_IMG}:${FLANNEL_VER} \
+           --exec /opt/bin/flanneld \
+           -- --ip-masq=true
+
+        # Update docker options
+        ExecStartPost=/usr/bin/rkt run --net=host \
+           --stage1-path=/usr/lib/rkt/stage1-images/stage1-fly.aci \
+           --insecure-options=image \
+           --volume runvol,kind=host,source=/run,readOnly=false \
+           --mount volume=runvol,target=/run \
+           ${FLANNEL_IMG}:${FLANNEL_VER} \
+           --exec /opt/bin/mk-docker-opts.sh -- -d /run/flannel_docker_opts.env -i
+
+        ExecStopPost=/usr/bin/rkt gc --mark-only
+
+        [Install]
+        WantedBy=multi-user.target
+
 	- path: /etc/systemd/system/flanneld.service.d/50-network-config.conf
       content: |
         [Service]
@@ -70,10 +126,10 @@ write-files:
         Description=Install s3-get-presigned-url
         Requires=network-online.target
         [Service]
-        ExecStartPre=-/usr/bin/mkdir -p /opt/bin
+        ExecStartPre=-/bin/mkdir -p /opt/bin
         ExecStart=/usr/bin/curl -L -o /opt/bin/s3-get-presigned-url \
           https://github.com/kz8s/s3-get-presigned-url/releases/download/v0.1/s3-get-presigned-url_linux_amd64
-        ExecStart=/usr/bin/chmod +x /opt/bin/s3-get-presigned-url
+        ExecStart=/bin/chmod +x /opt/bin/s3-get-presigned-url
         RemainAfterExit=yes
         Type=oneshot
 
@@ -84,7 +140,7 @@ write-files:
         Description=Get ssl artifacts from s3 bucket using IAM role
         Requires=s3-get-presigned-url.service
         [Service]
-        ExecStartPre=-/usr/bin/mkdir -p /etc/kubernetes/ssl
+        ExecStartPre=-/bin/mkdir -p /etc/kubernetes/ssl
         ExecStart=/bin/sh -c "/usr/bin/curl $(/opt/bin/s3-get-presigned-url \
           ${ region } ${ bucket } ${ ssl-tar }) | tar xv -C /etc/kubernetes/ssl/"
         RemainAfterExit=yes
@@ -108,11 +164,12 @@ write-files:
           --mount volume=stage,target=/tmp \
           --volume var-log,kind=host,source=/var/log \
           --mount volume=var-log,target=/var/log"
-        ExecStartPre=/usr/bin/mkdir -p /var/log/containers
-        ExecStartPre=/usr/bin/mkdir -p /var/lib/kubelet
-        ExecStartPre=/usr/bin/mount --bind /var/lib/kubelet /var/lib/kubelet
-        ExecStartPre=/usr/bin/mount --make-shared /var/lib/kubelet
-        ExecStart=/usr/lib/coreos/kubelet-wrapper \
+        ExecStartPre=/bin/mkdir -p /var/log/containers
+        ExecStartPre=/bin/mkdir -p /etc/kubernetes/manifests
+        ExecStartPre=/bin/mkdir -p /var/lib/kubelet
+        ExecStartPre=/bin/mount --bind /var/lib/kubelet /var/lib/kubelet
+        ExecStartPre=/bin/mount --make-shared /var/lib/kubelet
+        ExecStart=/opt/bin/kubelet-wrapper \
           --allow-privileged=true \
           --api-servers=http://master.${ internal-tld }:8080 \
           --cloud-provider=aws \
