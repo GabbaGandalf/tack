@@ -23,7 +23,7 @@ resource "aws_launch_configuration" "worker-gpu" {
     "${ var.security-group-id }",
   ]
 
-  user_data = "${ template_file.cloud-config-gpu.rendered }"
+  user_data = "${ data.template_file.cloud-config-gpu.rendered }"
 
   /*lifecycle {
     create_before_destroy = true
