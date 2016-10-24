@@ -12,7 +12,7 @@ runcmd:
 
 write_files:
 
-  - path: /etc/systemd/system/format/ephemeral.service
+  - path: /etc/systemd/system/format-ephemeral.service
     content: |
       [Unit]
       Description=Formats the ephemeral drive
@@ -261,13 +261,13 @@ write_files:
 EOF
 
   vars {
-  bucket = "iasdfasdf"
-  cluster-domain = "adsfasdf"
-  hyperkube-image = "adsfasdf"
-  hyperkube-tag = "adsfasdf"
-  dns-service-ip = "adsfasdf"
-  internal-tld = "adsfasdf"
-  region = "adsfasdf"
-  ssl-tar = "adsfasdf"
+    bucket = "${ var.bucket-prefix }"
+    cluster-domain = "${ var.cluster-domain }"
+    hyperkube-image = "${ var.hyperkube-image }"
+    hyperkube-tag = "${ var.hyperkube-tag }"
+    dns-service-ip = "${ var.dns-service-ip }"
+    internal-tld = "${ var.internal-tld }"
+    region = "${ var.region }"
+    ssl-tar = "/ssl/k8s-worker.tar"
   }
 }
