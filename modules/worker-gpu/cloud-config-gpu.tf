@@ -45,7 +45,7 @@ write_files:
       Environment="ETCD_PEER_CLIENT_CERT_AUTH=true"
       Environment="ETCD_PEER_CERT_FILE=/etc/kubernetes/ssl/k8s-worker.pem"
       Environment="ETCD_PEER_KEY_FILE=/etc/kubernetes/ssl/k8s-worker-key.pem"
-      Environment="ETC_PROXY=on"
+      Environment="ETCD_PROXY=on"
 
 
   - path: /etc/systemd/system/flanneld.service
@@ -151,37 +151,37 @@ write_files:
   - path: /etc/systemd/system/kubelet.service
     content: |
       [Unit]
-      ConditionFileIsExecutable=/usr/lib/coreos/kubelet-wrapper
+      ConditionFileIsExecutable=/opt/bin/kubelet-wrapper
       [Service]
       Environment="KUBELET_ACI=${ hyperkube-image }"
       Environment="KUBELET_VERSION=${ hyperkube-tag }"
       Environment="RKT_OPTS=\
-      --volume dns,kind=host,source=/etc/resolv.conf \
-      --mount volume=dns,target=/etc/resolv.conf \
-      --volume rkt,kind=host,source=/opt/bin/host-rkt \
-      --mount volume=rkt,target=/usr/bin/rkt \
-      --volume var-lib-rkt,kind=host,source=/var/lib/rkt \
-      --mount volume=var-lib-rkt,target=/var/lib/rkt \
-      --volume stage,kind=host,source=/tmp \
-      --mount volume=stage,target=/tmp \
-      --volume var-log,kind=host,source=/var/log \
-      --mount volume=var-log,target=/var/log"
+        --volume dns,kind=host,source=/etc/resolv.conf \
+        --mount volume=dns,target=/etc/resolv.conf \
+        --volume rkt,kind=host,source=/opt/bin/host-rkt \
+        --mount volume=rkt,target=/usr/bin/rkt \
+        --volume var-lib-rkt,kind=host,source=/var/lib/rkt \
+        --mount volume=var-lib-rkt,target=/var/lib/rkt \
+        --volume stage,kind=host,source=/tmp \
+        --mount volume=stage,target=/tmp \
+        --volume var-log,kind=host,source=/var/log \
+        --mount volume=var-log,target=/var/log"
       ExecStartPre=/bin/mkdir -p /var/log/containers
       ExecStartPre=/bin/mkdir -p /etc/kubernetes/manifests
       ExecStartPre=/bin/mkdir -p /var/lib/kubelet
       ExecStartPre=/bin/mount --bind /var/lib/kubelet /var/lib/kubelet
       ExecStartPre=/bin/mount --make-shared /var/lib/kubelet
       ExecStart=/opt/bin/kubelet-wrapper \
-      --allow-privileged=true \
-      --api-servers=http://master.${ internal-tld }:8080 \
-      --cloud-provider=aws \
-      --cluster-dns=${ dns-service-ip } \
-      --cluster-domain=${ cluster-domain } \
-      --config=/etc/kubernetes/manifests \
-      --kubeconfig=/etc/kubernetes/kubeconfig.yml \
-      --register-node=true \
-      --tls-cert-file=/etc/kubernetes/ssl/k8s-worker.pem \
-      --tls-private-key-file=/etc/kubernetes/ssl/k8s-worker-key.pem
+        --allow-privileged=true \
+        --api-servers=http://master.${ internal-tld }:8080 \
+        --cloud-provider=aws \
+        --cluster-dns=${ dns-service-ip } \
+        --cluster-domain=${ cluster-domain } \
+        --config=/etc/kubernetes/manifests \
+        --kubeconfig=/etc/kubernetes/kubeconfig.yml \
+        --register-node=true \
+        --tls-cert-file=/etc/kubernetes/ssl/k8s-worker.pem \
+        --tls-private-key-file=/etc/kubernetes/ssl/k8s-worker-key.pem
       Restart=always
       RestartSec=5
       [Install]
@@ -257,6 +257,18 @@ write_files:
       - name: "etc-kube-ssl"
       hostPath:
       path: "/etc/kubernetes/ssl"
+
+runcmd:
+  - sudo systemctl daemon-reload
+  - sudo systemctl enable --now get-ssl.service
+  - sudo rm -rf /var/lib/etcd/*
+  - sudo systemctl stop etcd.service
+  - sudo systemctl enable etcd2.service
+  - sudo systemctl restart etcd2.service
+  - sudo systemctl stop docker.service
+  - sudo systemctl enable --now var-lib-docker.mount
+  - sudo systemctl start docker.service
+  - sudo systemctl enable --now kubelet.service
 
 EOF
 

@@ -13,6 +13,7 @@ resource "aws_internet_gateway" "main" {
 resource "aws_subnet" "public" {
   count = "${ length( split(",", var.azs) ) }"
 
+  map_public_ip_on_launch=true
   availability_zone = "${ element( split(",", var.azs), count.index ) }"
   cidr_block = "${ cidrsubnet(var.cidr, 8, count.index) }"
   vpc_id = "${ aws_vpc.main.id }"
