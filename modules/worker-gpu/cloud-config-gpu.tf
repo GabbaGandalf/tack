@@ -260,7 +260,9 @@ write_files:
 
 runcmd:
   - sudo systemctl daemon-reload
-  - sudo systemctl enable --now get-ssl.service
+  - sudo systemctl start get-ssl.service
+  - sleep 30s
+  - sudo systemctl enable get-ssl.service
   - sudo rm -rf /var/lib/etcd/*
   - sudo systemctl stop etcd.service
   - sudo systemctl enable etcd2.service
