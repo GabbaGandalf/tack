@@ -181,7 +181,8 @@ write_files:
         --kubeconfig=/etc/kubernetes/kubeconfig.yml \
         --register-node=true \
         --tls-cert-file=/etc/kubernetes/ssl/k8s-worker.pem \
-        --tls-private-key-file=/etc/kubernetes/ssl/k8s-worker-key.pem
+        --tls-private-key-file=/etc/kubernetes/ssl/k8s-worker-key.pem \
+        --experimental-nvidia-gpus=1
       Restart=always
       RestartSec=5
       [Install]

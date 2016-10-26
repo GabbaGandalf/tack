@@ -32,6 +32,7 @@ variable "instance-type" {
     bastion = "t2.nano"
     etcd = "t2.micro"
     worker = "t2.micro"
+    worker-gpu = "g2.2xlarge"
   }
 }
 variable "internal-tld" {}

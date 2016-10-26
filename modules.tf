@@ -127,19 +127,20 @@ module "worker-gpu" {
   source = "./modules/worker-gpu"
   depends-id = "${ module.route53.depends-id }"
 
-  ami-id = "ami-8cac54e3" #"${ var.coreos-aws["ami"] }"
+  #ami-id = "ami-8cac54e3" #"${ var.coreos-aws["ami"] }"
+  ami-id = "ami-5dd32b32" #"${ var.coreos-aws["ami"] }"
   bucket-prefix = "${ var.s3-bucket }"
   capacity = {
-    desired = 3
-    max = 5
-    min = 3
+    desired = 1
+    max = 2
+    min = 1
   }
   cluster-domain = "${ var.cluster-domain }"
   hyperkube-image = "${ var.k8s["hyperkube-image"] }"
   hyperkube-tag = "${ var.k8s["hyperkube-tag"] }"
   dns-service-ip = "${ var.dns-service-ip }"
   instance-profile-name = "${ module.iam.instance-profile-name-worker }"
-  instance-type = "${ var.instance-type["worker"] }"
+  instance-type = "${ var.instance-type["worker-gpu"] }"
   internal-tld = "${ var.internal-tld }"
   key-name = "${ var.aws["key-name"] }"
   name = "${ var.name }"

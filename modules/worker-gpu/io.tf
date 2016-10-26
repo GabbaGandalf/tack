@@ -2,9 +2,9 @@ variable "ami-id" {}
 variable "bucket-prefix" {}
 variable "capacity" {
   default = {
-    desired = 5
-    max = 5
-    min = 3
+    desired = 1
+    max = 2
+    min = 1
   }
 }
 variable "cluster-domain" {}
