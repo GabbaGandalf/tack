@@ -88,7 +88,7 @@ write_files:
       --mount volume=certs,target=/etc/ssl/certs \
       --mount volume=resolv,target=/etc/resolv.conf \
       --mount volume=hosts,target=/etc/hosts \
-      quay.io/coreos/flannel:v0.6.2 \
+      $${FLANNEL_IMG}:$${FLANNEL_VER} \
       --exec /opt/bin/flanneld \
       -- --ip-masq=true
 
@@ -98,7 +98,7 @@ write_files:
       --insecure-options=image \
       --volume runvol,kind=host,source=/run,readOnly=false \
       --mount volume=runvol,target=/run \
-      quay.io/coreos/flannel:v0.6.2 \
+      $${FLANNEL_IMG}:$${FLANNEL_VER} \
       --exec /opt/bin/mk-docker-opts.sh -- -d /run/flannel_docker_opts.env -i
 
       ExecStopPost=/usr/bin/rkt gc --mark-only

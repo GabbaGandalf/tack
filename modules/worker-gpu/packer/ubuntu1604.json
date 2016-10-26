@@ -1,0 +1,33 @@
+{
+    "variables": {
+        "aws_access_key": "",
+        "aws_secret_key": ""
+    },
+    "builders": [{
+        "type": "amazon-ebs",
+        "access_key": "{{user `aws_access_key`}}",
+        "secret_key": "{{user `aws_secret_key`}}",
+        "region": "eu-central-1",
+        "source_ami": "ami-a9a557c6",
+        "spot_price": "0.4",
+		"associate_public_ip_address" : true,
+        "instance_type": "g2.2xlarge",
+        "ssh_username": "ubuntu",
+        "ami_name": "nvidia rkt etcd {{timestamp}}"
+    }],
+    "provisioners": [
+        {
+           "type": "file",
+          "source": "nv-devices",
+          "destination": "/tmp/nv-devices"
+        },
+        {
+           "type": "file",
+          "source": "nv-devices.service",
+          "destination": "/tmp/nv-devices.service"
+        },
+        {
+        "type": "shell",
+        "script": "provisioner.sh"
+    }]
+}
