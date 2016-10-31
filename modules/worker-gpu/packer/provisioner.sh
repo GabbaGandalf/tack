@@ -3,7 +3,7 @@ sleep 30
 sudo apt-get update
 # sudo apt-get upgrade -y
 #install docker etcd and build-essentials
-sudo apt-get install -y etcd docker.io build-essential
+sudo apt-get install -y etcd docker.io build-essential dkms
 #install rkt
 wget https://raw.githubusercontent.com/coreos/rkt/master/scripts/install-rkt.sh
 chmod +x install-rkt.sh
@@ -28,7 +28,7 @@ mkdir nvidia_installers
 ./cuda_8.0.44_linux-run -extract=$PWD/nvidia_installers
 
 #install nvidia driver (-s silent -a accept license -Z disable noveau driver)
-sudo ./NVIDIA-Linux-x86_64-367.57.run -s -Z -a --utility-prefix=/opt/nvidia --opengl-prefix=/opt/nvidia
+sudo ./NVIDIA-Linux-x86_64-367.57.run -s -Z -a --utility-prefix=/opt/nvidia --opengl-prefix=/opt/nvidia --dkms
 sudo update-initramfs -u
 
 #clean-up
