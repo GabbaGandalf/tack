@@ -32,8 +32,11 @@ variable "instance-type" {
     bastion = "t2.nano"
     etcd = "m3.medium"
     worker = "m3.medium"
+    gpu = "g2.2xlarge"
   }
 }
+variable "gpu-ami"{ default =  "ami-5da25932"  }
+variable "flannelver" { default = "v0.6.2" }
 variable "internal-tld" {}
 variable "k8s" {
   default = {

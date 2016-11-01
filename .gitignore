@@ -13,3 +13,5 @@ terraform.tfvars
 tmp/
 templates
 *.bak
+
+*.tags

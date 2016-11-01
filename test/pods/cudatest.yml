@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: devquery
+  labels:
+    name: devquery
+spec:
+  replicas: 1
+  selector: 
+    name: devquery
+  template:
+    metadata:
+      labels:
+        name: devquery
+    spec:
+      containers:
+      - image: gabbagandalf/devquery
+        command:
+          - /bin/bash
+          - /dev.sh
+        imagePullPolicy: IfNotPresent
+        name: cudatest
+        resources:
+          requests:
+            alpha.kubernetes.io/nvidia-gpu: 1
+          limits:
+            alpha.kubernetes.io/nvidia-gpu: 1
+        volumeMounts:
+        - mountPath: /opt/cuda
+          name: cuda
+        - mountPath: /opt/nvidia
+          name: nvidia
+      volumes:
+      - name: cuda
+        hostPath:
+          path: /opt/cuda
+      - name: nvidia
+        hostPath:
+          path: /opt/nvidia
+      restartPolicy: Always

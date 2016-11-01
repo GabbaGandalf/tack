@@ -1,0 +1,9 @@
+[Unit]
+Desription=Makes sure all devices in /dev exist
+
+[Service]
+Type=oneshot
+ExecStart=/opt/bin/nv-devices
+
+[Install]
+WantedBy=multi-user.target
