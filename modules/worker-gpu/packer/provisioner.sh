@@ -42,12 +42,19 @@ sudo ldconfig
 cd nvidia_installers
 sudo ./cuda-linux64-rel-8.0.44-21122537.run -noprompt -prefix=/opt/cuda
 
+#install cudnn
+cd ../
+CUDNN_DOWNLOAD_SUM=a87cb2df2e5e7cc0a05e266734e679ee1a2fadad6f06af82a76ed81a23b102c8
+curl -fsSL http://developer.download.nvidia.com/compute/redist/cudnn/v5.1/cudnn-8.0-linux-x64-v5.1.tgz -O
+echo "$CUDNN_DOWNLOAD_SUM  cudnn-8.0-linux-x64-v5.1.tgz" | sha256sum -c --strict - && \
+sudo tar -xzf cudnn-8.0-linux-x64-v5.1.tgz -C /opt
+rm cudnn-8.0-linux-x64-v5.1.tgz
+
 #link cuda libraries
 echo "/opt/cuda/lib64" | sudo tee --append /etc/ld.so.conf
 sudo ldconfig
 
 #clean up installers
-cd ../
 rm -rf nvidia_installers
 
 #make sure all devices are present
